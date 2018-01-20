@@ -22,10 +22,22 @@ defmodule ExRated do
   Starts the ExRated rate limit counter server.
   """
   def start_link(args, opts \\ []) do
-    case args do
-      [] -> GenServer.start_link(__MODULE__, app_args_with_defaults(), opts)
-      _ -> GenServer.start_link(__MODULE__, args, opts)
+    res = case args do
+      [] -> GenServer.start_link(__MODULE__, app_args_with_defaults(), [{:name, genserver_name} | opts])
+      _ -> GenServer.start_link(__MODULE__, args, [{:name, genserver_name} | opts])
     end
+
+    case res do
+       {:ok, pid} ->
+        {:ok, pid}
+      {:error, {:already_started, pid}} ->
+        Process.link(pid)
+        {:ok, pid}
+    end
+  end
+
+  def genserver_name do
+    {:global, __MODULE__}
   end
 
 
@@ -48,7 +60,7 @@ defmodule ExRated do
   """
   @spec check_rate(id::String.t, scale::integer, limit::integer) :: {:ok, count::integer} | {:error, limit::integer}
   def check_rate(id, scale, limit) do
-    GenServer.call(:ex_rated, {:check_rate, id, scale, limit})
+    GenServer.call(genserver_name, {:check_rate, id, scale, limit})
   end
 
   @doc """
@@ -78,7 +90,7 @@ defmodule ExRated do
                                                                          created_at :: integer | nil,
                                                                          updated_at :: integer | nil}
   def inspect_bucket(id, scale, limit) do
-    GenServer.call(:ex_rated, {:inspect_bucket, id, scale, limit})
+    GenServer.call(genserver_name, {:inspect_bucket, id, scale, limit})
   end
 
   @doc """
@@ -98,7 +110,7 @@ defmodule ExRated do
   """
   @spec delete_bucket(id::String.t) :: :ok | :error
   def delete_bucket(id) do
-    GenServer.call(:ex_rated, {:delete_bucket, id})
+    GenServer.call(genserver_name, {:delete_bucket, id})
   end
 
   @doc """

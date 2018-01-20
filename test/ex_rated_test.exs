@@ -109,12 +109,12 @@ defmodule ExRatedServerTest do
   end
 
   defp start_server(table, persistent) do
-    GenServer.start_link(ExRated, [
+    ExRated.start_link([
       {:timeout, 10_000},
       {:cleanup_rate,10_000},
       {:ets_table_name, table},
-      {:persistent, persistent},
-    ], [name: :ex_rated])
+      {:persistent, persistent}
+    ], [])
   end
 
 end
